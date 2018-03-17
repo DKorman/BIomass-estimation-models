@@ -1,0 +1,297 @@
+
+```{r root.dir}
+
+#kod za visestruku linearnu regresiju za model biomase na temelju diameter i height
+
+library(ggplot2)
+library(readxl)
+
+
+#reading .xslx containing height and diameter data
+opts_knit$set(root.dir=("A:/Ostalo/Statisticka_obrada_makije/Prva_grupa_zadataka/PRVI_ZADATAK"))
+input_data=read_excel("A:/Ostalo/Statisticka_obrada_makije/Prva_grupa_zadataka/PRVI_ZADATAK/Pripremna_tablica_v3.xlsx")
+
+#subsetting PubescentOak data
+PubescentOak=read[read$`Tree_species`=="Pubescent Oak", ]
+DiameterPubescentOak=PubescentOak$`Diameter`
+HeightPubescentOak=PubescentOak$Height
+VolumePubescentOak=PubescentOak$`Volume(dm^3)`
+
+
+#Graphical preview of the distribution of the explanatory variables
+
+  # histogram of explanatory variables. Even though the assumption of linear regression regarding the normal distribution of data    concerns the distribution of errors, not the explanatory variables, it is often good to check on the distribution of the input     data
+      
+  hist_HeightPubescentOak=ggplot(data=PubescentOak, aes(HeightPubescentOak)) + geom_histogram(aes(y =..density..),                   col="red", fill="green", alpha=.4)  + geom_density(col=2) + labs(title="Histogram Height") + labs(x="Height",y="number of  samples")
+      
+  hist_DiameterPubescentOak=ggplot(data=PubescentOak, aes(DiameterPubescentOak)) + geom_histogram(aes(y =..density..),               col="red", fill="green", alpha=.4)  + geom_density(col=2) + labs(title="Histogram Diameter ") + labs(x="Diameter",y="number of samples ")
+      
+      
+  hist_VolumePubescentOak=ggplot(data=PubescentOak, aes(VolumePubescentOak)) + geom_histogram(aes(y =..density..), col="red",     fill="green", alpha=.4)  + geom_density(col=2) + labs(title="Histogram Volume") + labs(x="Volume",y="number of samples")
+
+  library(ggpubr)
+  ggarrange(hist_HeightPubescentOak,hist_DiameterPubescentOak, hist_VolumePubescentOak,nrow = 3)
+        
+        
+  #boxplot of explanatory variables. Similar to histogram. Even though the assumption of linear regression regarding the normal      distribution of data concerns the distribution of errors, not the explanatory variables, it is often good to check on the          distribution of the input data
+  
+  boxplot_HeightPubescentOak=ggplot(data=PubescentOak, aes(x = "", y = HeightPubescentOak))+ geom_boxplot(outlier.shape = "point")+   stat_boxplot(geom ='errorbar')+ geom_boxplot(size = 1.3) + geom_boxplot(outlier.shape =5, outlier.size = 3) +  labs(y="Height ",   x=" ") + coord_cartesian(ylim=c(0,15), expand = TRUE)
+
+  boxplot_DiameterPubescentOak=ggplot(data=PubescentOak, aes(x = "", y = DiameterPubescentOak))+ geom_boxplot(outlier.shape =   "point")+  stat_boxplot(geom ='errorbar')+ geom_boxplot(size = 1.3) + geom_boxplot(outlier.shape =5, outlier.size = 3) +  labs(y="Diameter", x=" ") + coord_cartesian(ylim=c(0,20), expand = TRUE)
+             
+  boxplot_VolumePubescentOak=ggplot(data=PubescentOak, aes(x = "", y = VolumePubescentOak))+ geom_boxplot(outlier.shape = "point")+   stat_boxplot(geom ='errorbar')+ geom_boxplot(size = 1.3) + geom_boxplot(outlier.shape =5, outlier.size = 3) +  labs(y="Volume",   x=" ") + coord_cartesian(ylim=c(0,50), expand = TRUE)
+                          
+  ggarrange(boxplot_HeightPubescentOak,boxplot_DiameterPubescentOak,boxplot_VolumePubescentOak,ncol = 3)
+
+            
+            
+#Preliminary check whether the model is possibly better fitted with only one explanatory variable. Small function was made to      graph the results easily.
+     
+ggplotRegression=function (fit) {
+    require(ggplot2)
+    ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
+    geom_point() +
+    stat_smooth(method = "lm", col = "red") +
+    labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+                           "Intercept =",signif(fit$coef[[1]],5 ),
+                           " Slope =",signif(fit$coef[[2]], 5),
+                           " P =",signif(summary(fit)$coef[2,4], 5))) 
+                                } 
+           
+  #Height and Volume model
+  fitHeightVolumePubescentOak=lm(HeightPubescentOak~VolumePubescentOak)
+  ggplotRegression(fitHeightVolumePubescentOak)
+
+  #Diameter and volume model
+  fitDiameterVolumePubescentOak=lm(DiameterPubescentOak~VolumePubescentOak)
+  ggplotRegression(fitDiameterVolumePubescentOak)
+
+#Searching for best possible equation among models known in literature for similar tree species
+
+    OLSPubescentOak=lm(VolumePubescentOak~DiameterPubescentOak+HeightPubescentOak)
+    summary(OLSPubescentOak)    
+    AIC(OLSPubescentOak)
+    BIC(OLSPubescentOak)
+    
+    OLSPubescentOakDiameter=lm(VolumePubescentOak~DiameterPubescentOak)
+    summary(OLSPubescentOakDiameter)    
+    AIC(OLSPubescentOakDiameter) 
+    BIC(OLSPubescentOakDiameter) 
+    
+    OLSPubescentOakHeight=lm(VolumePubescentOak~HeightPubescentOak)
+    summary(OLSPubescentOakHeight)    
+    AIC(OLSPubescentOakHeight) 
+    BIC(OLSPubescentOakHeight) 
+    
+    loglogPubescentOak=lm(log(VolumePubescentOak)~log(HeightPubescentOak)+log(DiameterPubescentOak)) 
+    summary(loglogPubescentOak)   
+    AIC(loglogPubescentOak)
+    BIC(loglogPubescentOak)
+    
+    logPubescentOakA=lm(log(VolumePubescentOak)~HeightPubescentOak + DiameterPubescentOak)
+    summary(logPubescentOakA)  
+    AIC(logPubescentOakA) 
+    BIC(logPubescentOakA)  
+    
+    logPubescentOakB=lm(log(VolumePubescentOak)~HeightPubescentOak + log(DiameterPubescentOak))
+    summary(logPubescentOakB)   
+    AIC(logPubescentOakB) 
+    BIC(logPubescentOakB)
+    
+    logPubescentOakC=lm(log(VolumePubescentOak)~log(HeightPubescentOak)+DiameterPubescentOak)
+    summary(logPubescentOakC)      
+    AIC(logPubescentOakC) 
+    BIC(logPubescentOakC) 
+    
+    polyPubescentOakA=lm(VolumePubescentOak~poly(DiameterPubescentOak,2))
+    summary(polyPubescentOakA)     
+    AIC(polyPubescentOakA) 
+    BIC(polyPubescentOakA)     
+    
+    polyPubescentOakB=lm(VolumePubescentOak~poly(DiameterPubescentOak)+HeightPubescentOak)
+    summary(polyPubescentOakB)     
+    AIC(polyPubescentOakB) 
+    BIC(polyPubescentOakB)     
+    
+    sqrPubescentOak=lm(VolumePubescentOak~I(DiameterPubescentOak*DiameterPubescentOak)+HeightPubescentOak)
+    summary(sqrPubescentOakA)    
+    AIC(sqrPubescentOakA) 
+    BIC(sqrPubescentOakA)    
+    
+    sqrrootPubescentOakA=lm(VolumePubescentOak~I(HeightPubescentOak^(1/2))+DiameterPubescentOak)
+    summary(sqrrootPubescentOak)      
+    AIC(sqrrootPubescentOak) 
+    BIC(sqrrootPubescentOak)  
+    
+    multiPubescentOakA=lm(VolumePubescentOak~I(HeightPubescentOak*DiameterPubescentOak)+DiameterPubescentOak)     
+    summary(multiPubescentOakA)     
+    AIC(multiPubescentOakA) 
+    BIC(multiPubescentOakA)  
+    
+    logPubescentOakD=lm(log(VolumePubescentOak)~I((DiameterPubescentOak*log(DiameterPubescentOak))*log(HeightPubescentOak)))
+    summary(logPubescentOakD)      
+    AIC(logPubescentOakD) 
+    BIC(logPubescentOakD)   
+    
+    logPubescentOakE=lm(log(VolumePubescentOak)~I(DiameterPubescentOak*log(DiameterPubescentOak))+log(HeightPubescentOak))
+    summary(logPubescentOakE)     
+    AIC(logPubescentOakE) 
+    BIC(logPubescentOakE) 
+    
+    sqrmultiPubescentOak=lm(VolumePubescentOak~I((DiameterPubescentOak*DiameterPubescentOak)*HeightPubescentOak))
+    summary(sqrmultiPubescentOak)      
+    AIC(sqrmultiPubescentOak) 
+    BIC(sqrmultiPubescentOak) 
+    
+    logPubescentOakF=lm(log(VolumePubescentOak)~DiameterPubescentOak)
+    summary(logPubescentOakF)     
+    AIC(logPubescentOakF) 
+    BIC(logPubescentOakF)     
+    
+    expPubescentOakA=lm(VolumePubescentOak~exp(log(DiameterPubescentOak)+log(HeightPubescentOak)))
+    summary(expPubescentOakA)     
+    AIC(expPubescentOakA) 
+    BIC(expPubescentOakA) 
+    
+    sqrPubescentOakC=lm(VolumePubescentOak~I((DiameterPubescentOak^2)*HeightPubescentOak)+I(DiameterPubescentOak^2))
+    summary(sqrPubescentOakC)      
+    AIC(sqrPubescentOakC) 
+    BIC(sqrPubescentOakC)    
+
+    expPubescentOakB=lm(VolumePubescentOak~exp(log(DiameterPubescentOak)))        
+    summary(expPubescentOakB)     
+    AIC(expPubescentOakB) 
+    BIC(expPubescentOakB) 
+
+    multiPubescentOakB=lm(VolumePubescentOak~I((DiameterPubescentOak^2)*HeightPubescentOak))
+    summary(multiPubescentOakB)     
+    AIC(multiPubescentOakB)
+    BIC(multiPubescentOakB) 
+
+    
+    
+#Summary of the model with the best R2 in my scenario
+loglogPubescentOak=lm(log(VolumePubescentOak)~log(HeightPubescentOak)+log(DiameterPubescentOak))
+summary(loglogPubescentOak)
+
+#Check if the assumptions of the linear regression are mostly met
+
+    #QQ plot for normal distribution of residuals/errors
+    qqnorm(residuals(loglogPubescentOak))
+    qqline(residuals(loglogPubescentOak))
+
+    #Shapiro test for normal distribution of residuals/errors, H0=residuals are normally distributed
+    shapiro.test(loglogPubescentOak$residuals)
+                  
+    #histogram of ressiduals
+    hist(loglogPubescentOak$residuals)
+                  
+         
+    #Durbin-Watson test for autocorrelation of residuals, H0=residuals are not correlated
+    library(lmtest)
+    dwtest(loglogPubescentOak)
+        
+    #test for heteroscedasticity (non consant variation of residuals), H0= variance is constant
+    library(car)
+    ncvTest(loglogPubescentOak)
+                  
+    #Outlier influence tests
+                      
+        #Cook's Distance plot
+        cutoff <- 4/((nrow(PubescentOak)-length(loglogPubescentOak$coefficients)-2)) 
+        plot(loglogPubescentOak, which=4, cook.levels=cutoff)
+
+        #Influence Plot
+        influencePlot(loglogPubescentOak,	id.method="identify", main="Influence Plot", sub="Circle size is proportial to Cook's   distance" )
+
+  
+    #test for multicollinearity of explanatory variables
+    #library(VIF)#
+    #vif(HeightPubescentOak,DiameterPubescentOak)#
+    cor(HeightPubescentOak,DiameterPubescentOak)
+
+    
+    
+    
+#GOODNESS OF FIT TESTS FOR THE CHOSEN MODEL
+      
+      #RMSE=Root mean squared error = Residual standard error
+      
+      RMSEPubescentOak=sqrt((sum(residuals(loglogPubescentOak)^2))/loglogPubescentOak$df.residual)
+      RMSEPubescentOak
+
+      #b)PRSE=percent relative standard errors /Relative Standard Deviation / Measure of Relative Variability (RMSE expressed in         percentages)
+      PRSEPubescentOak=100*(sigma(loglogPubescentOak)/mean(loglogPubescentOak$fitted.values))
+      
+      #MAPE=measure of prediction accuracy;Compute the mean absolute percentage error regression loss.
+      library(TSPred)
+      predicted=exp(loglogPubescentOak$fitted.values)
+      actual=PubescentOak$`Volume(dm^3)`
+      MAPE(actual,predicted)
+      
+      
+      #d)leave one out crossvalidation, 
+      library(ISLR)
+      library(boot)
+      PubescentOakglm=glm(log(VolumePubescentOak)~log(HeightPubescentOak)+log(DiameterPubescentOak))
+      summary(PubescentOakglm)
+      MSE_LOOCVPubescentOak=cv.glm(input_data,PubescentOakglm)$delta[1]
+      MSE_LOOCVPubescentOak
+      
+      #c)COnfidence interval
+      ci = confint(loglogPubescentOak)
+      y = coef(loglogPubescentOak)
+      x = seq_along(y)
+      xlim = range(x) + c(-0.5,0.2)
+      ylim = range(ci)
+      ylim = ylim + 0.1*c(-1,+1)*diff(ylim) # extend it a little
+      ylab = bquote(hat(beta))
+      xlab = "coefficient"
+      par(mar=c(4.5,5,1,1), las=1)
+      plot(y, pch=16, xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, xaxt="n", bty="n")
+      axis(1, at=x, labels=names(y), tick=FALSE)
+      abline(h=0, lty=3) 
+      arrows(x,ci[,1],x,ci[,2], code=3, angle=90, length=0.05)
+      
+
+
+#Additional output - a two way table consisted of height and diameter commonly used in forestry for clear overview of the volume predictions ( see http://i58.tinypic.com/oftzlz.jpg as example)
+    
+
+
+  #a two way table for prediction of volume 
+
+      matrix = matrix(data=NA, nrow=100, ncol=100)
+      matrix
+      for (i in 1:20){    #20 centimeters was the highest diameter measured in our field surveys
+      
+         for(j in 1:100){  #bear in mind that in row below "j/10" is used, therefore the values range from 0,1 meters to 10 meter
+      
+            newdata=data.frame(HeightPubescentOak=j/10, DiameterPubescentOak=i)
+            prediction=exp(predict(loglogPubescentOak, newdata))
+            matrix[j,i]= prediction
+         }
+      }
+      write.xlsx(matrix,".../matrixA.xlsx")
+
+
+  #a two way table for prediction, but output is a range of values based on the confidence interval
+
+      matrixconf = matrix(data=NA, nrow=100, ncol=100)
+      matrixconf
+      for (i in 1:20){
+      
+         for(j in 1:100){
+      
+            newdata=data.frame(HeightPubescentOak=j/10, DiameterPubescentOak=i)
+            prediction=exp(predict(loglogPubescentOak, newdata,interval="confidence",level=0.95))
+            b=prediction[1,2]
+            c=prediction[1,3] 
+            d=paste(b,c, sep="-")
+            matrixconf[j,i]= d
+         }
+      }
+     write.xlsx(matrix,".../matrixB.xlsx")
+
+```
+
